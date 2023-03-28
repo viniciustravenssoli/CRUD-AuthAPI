@@ -1,3 +1,4 @@
+using System.Text;
 using System;
 using System.Collections.Generic;
 using Manager.Core.Exceptions;
@@ -41,19 +42,17 @@ namespace Manager.Domain.Entities
             Validate();
         }
 
-        public override bool Validate()
+        public bool Validate() 
+            => base.Validate<UserValidator, User>(new UserValidator(), this);
+
+        public string ErrorsToString()
         {
-            var validator = new UserValidator();
-            var validation = validator.Validate(this);
+            var builder = new StringBuilder();
 
-            if(!validation.IsValid){
-                foreach(var error in validation.Errors)
-                _errors.Add(error.ErrorMessage);
+            foreach(var error in _errors)
+                builder.AppendLine(error);
 
-                throw new DomainException("Alguns campos estão invalidos, por favor corrija-os" , _errors);
-            }
-            
-            return true;
+            return builder.ToString();
         }
         
     }

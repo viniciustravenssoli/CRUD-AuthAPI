@@ -8,30 +8,31 @@ using Manager.Infra.Interfaces;
 using Manager.Services.DTO;
 using Manager.Services.Interfaces;
 using EscNet.Cryptography.Interfaces;
+using EscNet.Hashers.Interfaces.Algorithms;
 
 namespace Manager.Services.Services{
     public class UserService : IUserService
     {
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
-        private readonly IRijndaelCryptography _rijndaelCryptography;
+        private readonly IArgon2IdHasher _hasher;
 
-        public UserService(IMapper mapper, IUserRepository userRepository, IRijndaelCryptography rijndaelCryptography)
+        public UserService(IMapper mapper, IUserRepository userRepository, IArgon2IdHasher hasher)
         {
             _mapper = mapper;
             _userRepository = userRepository;
-            _rijndaelCryptography = rijndaelCryptography;
+            _hasher = hasher;
         }
 
         public async Task<UserDTO> Create(UserDTO userDTO)
         {
             var userExists = await _userRepository.GetByEmail(userDTO.Email);
-            if(userExists!= null)
+            if(userExists != null)
                 throw new DomainException("Já existe um usuario cadastrado com esse email");
 
             var user = _mapper.Map<User>(userDTO);
             user.Validate();
-            user.ChangePassword(_rijndaelCryptography.Encrypt(user.Password));
+            user.ChangePassword(_hasher.Hash(user.Password));
 
             var userCreated = await _userRepository.Create(user);
 
@@ -42,7 +43,7 @@ namespace Manager.Services.Services{
         {
             var user = await _userRepository.GetByEmail(email);
 
-            var hasedpassword = _rijndaelCryptography.Encrypt(password);
+            var hasedpassword = _hasher.Hash(password);
 
             if (user.Password != hasedpassword)
             {
@@ -104,7 +105,7 @@ namespace Manager.Services.Services{
 
             var user = _mapper.Map<User>(userDTO);
             user.Validate();
-            user.ChangePassword(_rijndaelCryptography.Encrypt(user.Password));
+            user.ChangePassword(_hasher.Hash(user.Password));
 
             var userUpdated = await _userRepository.Update(user);
 

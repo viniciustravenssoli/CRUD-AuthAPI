@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using EscNet.IoC.Cryptography;
+using EscNet.IoC.Hashers;
+using Isopoh.Cryptography.Argon2;
 using Manager.API.Token;
 using Manager.API.ViewModels;
 using Manager.Domain.Entities;
@@ -116,9 +118,22 @@ namespace Manager.API
                 });
             });
 
-            #region Cryptography
 
-            services.AddRijndaelCryptography(Configuration["Cryptography"]);
+            #region Hash
+
+            var config = new Argon2Config
+            {
+                Type = Argon2Type.DataIndependentAddressing,
+                Version = Argon2Version.Nineteen,
+                Threads = Environment.ProcessorCount,
+                TimeCost = int.Parse(Configuration["Hash:TimeCost"]),
+                MemoryCost = int.Parse(Configuration["Hash:MemoryCost"]),
+                Lanes = int.Parse(Configuration["Hash:Lanes"]),
+                HashLength = int.Parse(Configuration["Hash:HashLength"]),
+                Salt = Encoding.UTF8.GetBytes(Configuration["Hash:Salt"])
+            };
+
+            services.AddArgon2IdHasher(config);
 
             #endregion
         }

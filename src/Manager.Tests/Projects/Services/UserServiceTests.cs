@@ -2,6 +2,7 @@ using AutoMapper;
 using Bogus;
 using Bogus.DataSets;
 using EscNet.Cryptography.Interfaces;
+using EscNet.Hashers.Interfaces.Algorithms;
 using FluentAssertions;
 using Manager.Core.Exceptions;
 using Manager.Domain.Entities;
@@ -27,18 +28,18 @@ namespace Manager.Tests.Projects.Services
         //Mocks
         private readonly IMapper _mapper;
         private readonly Mock<IUserRepository> _userRepositoryMock;
-        private readonly Mock<IRijndaelCryptography> _rijndaelCryptographyMock;
+        private readonly Mock<IArgon2IdHasher> _hasherMock;
 
         public UserServiceTests()
         {
             _mapper = AutoMapperConfiguration.GetConfiguration();
             _userRepositoryMock = new Mock<IUserRepository>();
-            _rijndaelCryptographyMock = new Mock<IRijndaelCryptography>();
+            _hasherMock = new Mock<IArgon2IdHasher>();
 
             _sut = new UserService(
                 mapper: _mapper,
                 userRepository: _userRepositoryMock.Object,
-                rijndaelCryptography: _rijndaelCryptographyMock.Object);
+                hasher: _hasherMock.Object);
         }
 
         #region Create
@@ -50,15 +51,15 @@ namespace Manager.Tests.Projects.Services
             // Arrange
             var userToCreate = UserFixture.CreateValidUserDTO();
 
-            var encryptedPassword = new Lorem().Sentence();
+            var hashedPassword = new Lorem().Sentence();
             var userCreated = _mapper.Map<User>(userToCreate);
-            userCreated.ChangePassword(encryptedPassword);
+            userCreated.ChangePassword(hashedPassword);
 
             _userRepositoryMock.Setup(x => x.GetByEmail(It.IsAny<string>()))
                 .ReturnsAsync(() => null);
 
-            _rijndaelCryptographyMock.Setup(x => x.Encrypt(It.IsAny<string>()))
-                .Returns(encryptedPassword);
+            _hasherMock.Setup(x => x.Hash(It.IsAny<string>()))
+                .Returns(hashedPassword);
 
             _userRepositoryMock.Setup(x => x.Create(It.IsAny<User>()))
                 .ReturnsAsync(() => userCreated);
@@ -128,13 +129,13 @@ namespace Manager.Tests.Projects.Services
             var userToUpdate = UserFixture.CreateValidUserDTO();
             var userUpdated = _mapper.Map<User>(userToUpdate);
 
-            var encryptedPassword = new Lorem().Sentence();
+            var hashedPassword = new Lorem().Sentence();
 
             _userRepositoryMock.Setup(x => x.Get(It.IsAny<long>()))
                 .ReturnsAsync(() => oldUser);
 
-            _rijndaelCryptographyMock.Setup(x => x.Encrypt(It.IsAny<string>()))
-                .Returns(encryptedPassword);
+            _hasherMock.Setup(x => x.Hash(It.IsAny<string>()))
+                .Returns(hashedPassword);
 
             _userRepositoryMock.Setup(x => x.Update(It.IsAny<User>()))
                 .ReturnsAsync(() => userUpdated);

@@ -39,8 +39,8 @@ namespace Manager.Domain.Validators
                 .MinimumLength(8)
                 .WithMessage("A senha deve ter 8 ou mais caracteres")
 
-                .MaximumLength(60)
-                .WithMessage("A senha deve ter no maximo 60 caracteres");
+                .MaximumLength(150)
+                .WithMessage("A senha deve ter no maximo 150 caracteres");
 
             RuleFor(x => x.Email)
                 .NotNull()
